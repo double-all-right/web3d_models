@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=UTF-8 />
+    <link href="./styles/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <div id="scene-container">
+        <!-- Our <canvas> will be inserted here -->
+    </div>
+    <script>
+
+    </script>
+    <script type="module">
+        import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/build/three.module.js';
+        import { OrbitControls } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/loaders/GLTFLoader.js';
+
+        const container = document.querySelector('#scene-container');
+        //有动画的数组
+        const updatables = [];
+        // 设立场景
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        // 设立相机
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 35;
+
+        // 设立渲染器
+        const renderer = new THREE.WebGLRenderer();
+        // 设立轨道控制
+        const controls = new OrbitControls(camera, container);
+        controls.tick = () => controls.update();
+        // 灯光
+        const light = new THREE.AmbientLight(0x404040, 5); // soft white light
+        scene.add(light);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+        scene.add(directionalLight);
+
+        const setSize = (container, camera, renderer) => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+        };
+        // 渲染初始窗口大小
+        setSize(container, camera, renderer);
+        //窗口调整
+        window.addEventListener('resize', () => {
+            // set the size again if a resize occurs
+            console.log('resizing');
+            setSize(container, camera, renderer);
+        });
+        // 将实际内容挂载到container里
+        container.appendChild(renderer.domElement);
+
+        function setupModel(data) {
+            const model = data.scene.children[0];
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
+            return model;
+        }
+
+        function setupModel_no_children(data) {
+            const model = data.scene;
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
+            return model;
+        }
+
+        function setupModel_multi_children(data) {
+            const model = data.scene.children;
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
+            return model;
+        }
+
+        let getObjectSize = function (obj) {
+            let objectBox = new THREE.Box3();
+            objectBox.setFromObject(obj);
+            return objectBox.max.clone().sub(objectBox.min);
+        };
+
+        async function loadItems() {
+            const loader = new GLTFLoader();
+
+            const [parrotData, tvData, cubeData, tv_tvstandData] = await Promise.all([
+                loader.loadAsync('./assets/models/Parrot.glb'),
+                loader.loadAsync('./assets/models/interior/tv.glb'),
+                loader.loadAsync('./assets/models/cube.glb'),
+                loader.loadAsync('./assets/models/interior/tv_tvstand.glb'),
+
+
+
+            ]);
+            // console.log('parrotData!', parrotData);
+            // console.log('tvData!', tvData);
+            console.log('tv_tvstandData!', tv_tvstandData);
+
+
+            let size;
+            const parrot = await setupModel(parrotData);
+
+            const cube = await setupModel(cubeData);
+
+
+            const tv_tvstand = await setupModel_no_children(tv_tvstandData);
+            tv_tvstand.scale.set(10, 10, 10);//scene整体缩放不会产生异常
+
+            const tv = tv_tvstand.children.find(ele => ele.name == 'TV');
+            console.log('tv', tv);
+
+            size = getObjectSize(tv);
+            console.log(`before scaled `,size);
+            /* 把从scene中取出一个部件不加处理的话，会产生异常。
+                       把下面这段代码注释掉可以在浏览器中观察到异常(放大的比例不对)
+                   */
+            // tv.scale.set(1, 1, 1);
+
+            size = getObjectSize(tv);
+            console.log(`after scaled `,size);
+
+            return {
+                parrot, tv, cube, tv_tvstand
+            }
+        }
+
+        async function init() {
+            const { parrot, tv, cube, tv_tvstand } = await loadItems();
+            updatables.push(controls);
+            updatables.push(parrot);
+            // scene.add(parrot);
+            // scene.add(tv);
+            // scene.add(cube);
+            scene.add(tv_tvstand);
+
+
+        }
+
+        const clock = new THREE.Clock();
+
+        function tick() {
+            // only call the getDelta function once per frame!
+            const delta = clock.getDelta();
+            for (const object of updatables) {
+                object.tick(delta);
+            }
+        }
+
+        init();
+
+        function animate() {
+            tick();
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+    </script>
+</body>
+
+</html>
