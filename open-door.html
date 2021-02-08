@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=UTF-8 />
+    <link href="./styles/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <div id="scene-container">
+        <!-- Our <canvas> will be inserted here -->
+    </div>
+    <div id="instructions">
+        <span style="font-size:36px;position: absolute;">点我开门</span>
+        <br /><br />
+    </div>
+    <script>
+
+    </script>
+    <script type="module">
+        import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/build/three.module.js';
+        import { OrbitControls } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/loaders/GLTFLoader.js';
+
+        const container = document.querySelector('#scene-container');
+        //有动画的数组
+        const updatables = [];
+        // 设立场景
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        // 设立相机
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 35;
+
+        // 设立渲染器
+        const renderer = new THREE.WebGLRenderer();
+        // 设立轨道控制
+        const controls = new OrbitControls(camera, container);
+        controls.tick = () => controls.update();
+        // 灯光
+        const light = new THREE.AmbientLight(0x404040, 5); // soft white light
+        scene.add(light);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+        scene.add(directionalLight);
+
+        const setSize = (container, camera, renderer) => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+        };
+        // 渲染初始窗口大小
+        setSize(container, camera, renderer);
+        //窗口调整
+        window.addEventListener('resize', () => {
+            // set the size again if a resize occurs
+            console.log('resizing');
+            setSize(container, camera, renderer);
+        });
+        // 将实际内容挂载到container里
+        container.appendChild(renderer.domElement);
+
+        let door;//门，异步赋值，所以提前声明
+        let lock=0;//实现锁，初始值为0表示模型没有加载完毕
+        function setupModel(data) {
+            const model = data.scene.children[0];
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
+            return model;
+        }
+
+        function setupModel_no_children(data) {
+            const model = data.scene;
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
+            return model;
+        }
+
+        function setupModel_multi_children(data) {
+            const model = data.scene.children;
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
+            return model;
+        }
+
+        async function loadItems() {
+            const loader = new GLTFLoader();
+
+            const [parrotData, simple_houseData] = await Promise.all([
+                loader.loadAsync('./assets/models/Parrot.glb'),
+                loader.loadAsync('./assets/models/house/simple_house.glb'),
+
+            ]);
+            console.log('parrotData!', parrotData);
+            
+            console.log('simple_houseData!', simple_houseData);
+
+
+            const parrot = setupModel(parrotData);
+            parrot.rotation.set(0, 0, 0);
+
+            const simple_hosue=setupModel_no_children(simple_houseData);
+            console.log('simple_hosue!', simple_hosue);
+             door=simple_hosue.children.find(item=>item.name=='door');
+            console.log('door!', door);
+            lock=1;//表示门的模型加载完毕
+
+
+            return {
+                parrot, simple_hosue
+            }
+        }
+
+        const btn = document.querySelector("#instructions");
+        btn.addEventListener('click', function () {
+            console.log('开门啦!');
+            openDoor();
+        }, false);
+
+        function openDoor() {
+            if(lock==1){//门的模型加载完毕，可以开关门
+            const rads = THREE.MathUtils.degToRad(45); // 1.57079... = π/2
+                door.rotation.y = rads;
+            }else{
+                alert("模型还没加载好");
+            }
+        }
+
+        async function init() {
+            const { parrot,simple_hosue} = await loadItems();
+            updatables.push(controls);
+            updatables.push(parrot);
+            scene.add(parrot);
+            scene.add(simple_hosue);
+
+
+        }
+        const clock = new THREE.Clock();
+        function tick() {
+            // only call the getDelta function once per frame!
+            const delta = clock.getDelta();
+            for (const object of updatables) {
+                object.tick(delta);
+            }
+        }
+
+        init();
+        function animate() {
+            tick();
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>
