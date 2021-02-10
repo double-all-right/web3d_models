@@ -102,29 +102,46 @@
         async function loadItems() {
             const loader = new GLTFLoader();
 
-            const [parrotData,roadSignData] = await Promise.all([
+            const [parrotData,roadSignData,roadSign2Data] = await Promise.all([
                 loader.loadAsync('./assets/models/Parrot.glb'),
                 loader.loadAsync('./assets/models/outdoor/roadsign.glb'),
+                loader.loadAsync('./assets/models/outdoor/roadsign2.glb'),
+
             ]);
             // console.log('parrotData!', parrotData);
-            console.log('roadSignData!', roadSignData);
+            // console.log('roadSignData!', roadSignData);
+            console.log('roadSignData!', roadSign2Data);
 
-            let size;
+
             const parrot = await setupModel(parrotData);
 
             const roadSign=await setupModel_no_children(roadSignData);
 
+            const roadSign2=await setupModel_no_children(roadSign2Data);
+            roadSign2.position.set(10,0,0);
+            let size;
+            size=getObjectSize(roadSign2);
+            console.log('size before',size);
+            roadSign2.scale.set(2,2,2);
+            size=getObjectSize(roadSign2);
+            console.log('size after',size);
+
+
             return {
-                parrot,roadSign
+                parrot,roadSign,roadSign2
             }
         }
 
         async function init() {
-            const { parrot,roadSign } = await loadItems();
+            const { parrot,roadSign,roadSign2 } = await loadItems();
             updatables.push(controls);
+
             updatables.push(parrot);
             scene.add(parrot);
+
             scene.add(roadSign);
+            scene.add(roadSign2);
+
 
 
         }
