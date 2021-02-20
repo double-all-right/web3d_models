@@ -108,8 +108,6 @@
                 loader.loadAsync('./assets/models/cube.glb'),
                 loader.loadAsync('./assets/models/interior/tv_tvstand.glb'),
 
-
-
             ]);
             // console.log('parrotData!', parrotData);
             // console.log('tvData!', tvData);
@@ -120,7 +118,6 @@
             const parrot = await setupModel(parrotData);
 
             const cube = await setupModel(cubeData);
-
 
             const tv_tvstand = await setupModel_no_children(tv_tvstandData);
             tv_tvstand.scale.set(10, 10, 10);//scene整体缩放不会产生异常
