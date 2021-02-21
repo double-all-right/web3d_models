@@ -38,7 +38,7 @@
         // 设立轨道控制
         const controls = new OrbitControls(camera, container);
         controls.tick = () => controls.update();
-        // 灯光
+        // 灯光，这次从模型中获取
         // const light = new THREE.AmbientLight(0x404040, 3); // soft white light
         // scene.add(light);
         // const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
