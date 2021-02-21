@@ -112,6 +112,7 @@
             // console.log('parrotData!', parrotData);
             // console.log('tvData!', tvData);
             console.log('tv_tvstandData!', tv_tvstandData);
+            console.log('test!');
 
 
             let size;
@@ -139,7 +140,6 @@
                 parrot, tv, cube, tv_tvstand
             }
         }
-
         async function init() {
             const { parrot, tv, cube, tv_tvstand } = await loadItems();
             updatables.push(controls);
@@ -148,10 +148,7 @@
             // scene.add(tv);
             // scene.add(cube);
             scene.add(tv_tvstand);
-
-
         }
-
         const clock = new THREE.Clock();
 
         function tick() {
