@@ -112,9 +112,9 @@
             let cube2 = new THREE.Mesh(geometry2, material2);
             cube2.tick = (delta) => {
                 // console.log('delta',delta);
-                cube2.rotation.x += delta * radiansPerSecond;
-                cube2.rotation.y += delta * radiansPerSecond;
-                cube2.position.y += delta * radiansPerSecond;
+                // cube2.rotation.x += delta * radiansPerSecond;
+                // cube2.rotation.y += delta * radiansPerSecond;
+                // cube2.position.y += delta * radiansPerSecond;
             };
 
             // RenderPass这个通道会渲染场景，但不会将渲染结果输出到屏幕上
@@ -160,7 +160,7 @@
             updatables.push(cube1);
             scene.add(cube1);
 
-            updatables.push(cube2);
+            // updatables.push(cube2);
             scene.add(cube2);
 
 
