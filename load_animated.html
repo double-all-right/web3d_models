@@ -15,9 +15,9 @@
 
     </script>
     <script type="module">
-        import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/build/three.module.js';
-        import { OrbitControls } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/controls/OrbitControls.js';
-        import { GLTFLoader } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/loaders/GLTFLoader.js';
+        import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
        
        
         const container = document.querySelector('#scene-container');
@@ -96,7 +96,7 @@
 
         function setupModel_temp2(data) {
             const model = data.scene;
-            const clip = data.animations[2];
+            const clip = data.animations[1];
             const mixer = new THREE.AnimationMixer(model);
             const action = mixer.clipAction(clip);
             action.play();
@@ -110,7 +110,7 @@
             const [parrotData, flamingoData, lowpolyData,person1Data] = await Promise.all([
                 loader.loadAsync('/assets/models/Parrot.glb'),
                 loader.loadAsync('/assets/models/Flamingo.glb'),
-                loader.loadAsync('/assets/models/character/lowpoly.glb'),
+                loader.loadAsync('/assets/models/character/lowpoly/lowpoly.glb'),
                 loader.loadAsync('/assets/models/character/3dperson1.glb'),
 
             ]);
