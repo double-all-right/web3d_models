@@ -33,7 +33,8 @@
         const container = document.querySelector('#scene-container');
 
         let bloomComposer;
-        let lock_bloomComposer = 0;//初始值为0，模型未加载完，设置animate函数不渲染
+        const lock_bloomComposerArray = [];//要高亮渲染的数组
+        let lock_bloomComposer = 0;
         //有动画的数组
         const updatables = [];
         // 设立场景
@@ -82,50 +83,16 @@
             }
             return model;
         }
-
-        async function loadItems() {
-            const loader = new GLTFLoader();
-
-            const [parrotData] = await Promise.all([
-                loader.loadAsync('./assets/models/Parrot.glb'),
-
-            ]);
-
-            const parrot = await setupModel(parrotData);
-            parrot.position.set(15, 0, 0);
-            parrot.scale.set(5, 5, 5);
-
-            const radiansPerSecond = THREE.MathUtils.degToRad(30);
-
-            let geometry1 = new THREE.BoxGeometry(4, 4, 4);
-            let material1 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-            let cube1 = new THREE.Mesh(geometry1, material1);
-            cube1.position.set(10, 0, 0);
-            cube1.tick = (delta) => {
-                // console.log('delta',delta);
-                cube1.rotation.x += delta * radiansPerSecond;
-                cube1.rotation.y += delta * radiansPerSecond;
-            };
-
-            let geometry2 = new THREE.BoxGeometry(4, 4, 4);
-            let material2 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-            let cube2 = new THREE.Mesh(geometry2, material2);
-            cube2.tick = (delta) => {
-                // console.log('delta',delta);
-                // cube2.rotation.x += delta * radiansPerSecond;
-                // cube2.rotation.y += delta * radiansPerSecond;
-                // cube2.position.y += delta * radiansPerSecond;
-            };
-
+        function highlight(model) {
             // RenderPass这个通道会渲染场景，但不会将渲染结果输出到屏幕上
-            const renderScene = new RenderPass(scene, camera)
+            const renderScene = new RenderPass(scene, camera)//运行这个函数，保证scene和camera已经有了
             // OutlinePass(resolution, scene, camera, selectedObjects)
             // resolution 分辨率
             // scene 场景
             // camera 相机
             // selectedObjects 需要选中的物体对象, 传入需要边界线进行高亮处理的对象
-            const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera, [cube2, parrot]);
-            lock_bloomComposer = 1;//cube2模型创建完后在animate中设置渲染
+            const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera, [model]);
+            model.lock_bloomComposer = 1;//模型创建完后在animate中设置渲染，未等模型渲染完成后应用动画会报错
 
             console.log(outlinePass);
             outlinePass.renderToScreen = true;
@@ -137,13 +104,77 @@
             outlinePass.visibleEdgeColor.set('orange'); // 设置显示的颜色
             outlinePass.hiddenEdgeColor.set('white'); // 设置隐藏的颜色
 
-            //创建效果组合器对象，可以在该对象上添加后期处理通道，通过配置该对象，使它可以渲染我们的场景，并应用额外的后期处理步骤，在render循环中，使用EffectComposer渲染场景、应用通道，并输出结果。
+            /*创建效果组合器对象，可以在该对象上添加后期处理通道，通过配置该对象，
+            使它可以渲染我们的场景，并应用额外的后期处理步骤，在render循环中，
+            使用EffectComposer渲染场景、应用通道，并输出结果。*/
             bloomComposer = new EffectComposer(renderer)
             bloomComposer.setSize(window.innerWidth, window.innerHeight);
             bloomComposer.addPass(renderScene);
             // 眩光通道bloomPass插入到composer
             bloomComposer.addPass(outlinePass);
+            return model;
+        }
 
+        function createCube1() {
+            let geometry1 = new THREE.BoxGeometry(4, 4, 4);
+            let material1 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            let cube1 = new THREE.Mesh(geometry1, material1);
+            // 旋转速度参数
+            const radiansPerSecond = THREE.MathUtils.degToRad(30);
+
+            cube1.position.set(10, 0, 0);
+            cube1.tick = (delta) => {
+                // console.log('delta',delta);
+                cube1.rotation.x += delta * radiansPerSecond;
+                cube1.rotation.y += delta * radiansPerSecond;
+            };
+
+            cube1.lock_bloomComposer = 0;//初始值为不能渲染高亮效果,等highlight后赋值为1
+            return cube1;
+        }
+
+        function createCube2() {
+            let geometry2 = new THREE.BoxGeometry(4, 4, 4);
+            let material2 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            let cube2 = new THREE.Mesh(geometry2, material2);
+
+            // 旋转速度参数
+            const radiansPerSecond = THREE.MathUtils.degToRad(30);
+            cube2.tick = (delta) => {
+                // console.log('delta',delta);
+                cube2.rotation.x += delta * radiansPerSecond;
+                cube2.rotation.y += delta * radiansPerSecond;
+                cube2.position.y += delta * radiansPerSecond;
+            };
+            cube2.lock_bloomComposer = 0;//初始值为不能渲染高亮效果,等highlight后赋值为1
+            return cube2;
+        }
+
+        async function loadItems() {
+            const loader = new GLTFLoader();
+
+            const [parrotData] = await Promise.all([
+                loader.loadAsync('./assets/models/Parrot.glb'),
+            ]);
+
+            let parrot = await setupModel(parrotData);
+            parrot.position.set(15, 0, 0);
+            parrot.scale.set(5, 5, 5);
+            parrot.lock_bloomComposer0;//初始值为不能渲染高亮效果,等highlight后赋值为1
+            lock_bloomComposerArray.push(parrot);
+
+
+            let cube1 = createCube1();
+            lock_bloomComposerArray.push(cube1);
+
+            let cube2 = createCube2();
+            lock_bloomComposerArray.push(cube1);
+
+            parrot = highlight(parrot);
+            cube1 = highlight(cube1);
+            cube2 = highlight(cube2);
+
+            console.log('lock_bloomComposerArray',lock_bloomComposerArray);
 
             return {
                 parrot, cube1, cube2
@@ -160,15 +191,19 @@
             updatables.push(cube1);
             scene.add(cube1);
 
-            // updatables.push(cube2);
+            updatables.push(cube2);
             scene.add(cube2);
 
-
-
+            // 判断是否每个应该改良的物体都highlight处理完毕
+            const judge_hightlight = (item) => item.lock_bloomComposer == 1;
+            let result = lock_bloomComposerArray.every(judge_hightlight);
+            console.log('可以在animate函数中设置高亮',result);
+            if(result==true){
+                lock_bloomComposer = 1;
+            }
         }
 
         const clock = new THREE.Clock();
-
         function tick() {
             // only call the getDelta function once per frame!
             const delta = clock.getDelta();
@@ -183,9 +218,9 @@
             tick();
             requestAnimationFrame(animate);
             renderer.render(scene, camera);
+
             if (lock_bloomComposer == 1) {
                 bloomComposer.render();
-
             }
 
         }
