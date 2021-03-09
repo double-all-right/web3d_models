@@ -15,9 +15,9 @@
 
     </script>
     <script type="module">
-        import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/build/three.module.js';
-        import { OrbitControls } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/controls/OrbitControls.js';
-        import { GLTFLoader } from 'https://threejsfundamentals.org/threejs/resources/threejs/r122/examples/jsm/loaders/GLTFLoader.js';
+        import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
 
         const container = document.querySelector('#scene-container');
         //有动画的数组
@@ -138,7 +138,7 @@
             // scene.add(building1);//单个模型
             // scene.add(building2);//单个模型
             // scene.add(building3);//单个模型
-            // scene.add(...building4);//多个模型合在一起的大模型
+            scene.add(...building4);//多个模型合在一起的大模型
         }
         const clock = new THREE.Clock();
         function tick() {
