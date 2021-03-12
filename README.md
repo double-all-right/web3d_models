@@ -18,6 +18,7 @@ windows平台在资源管理器中选中.glb模型，就可以预览模型
 4. THE WORLD'S PREFERRED SOURCE FOR 3D CONTENT: https://www.cgtrader.com/
 5. 3Dsky: https://3dsky.org/
 6. Dimensiva:  https://dimensiva.com
+7. free3d :https://free3d.com/
 
 ---
 /assets/models下文件组织
