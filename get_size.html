@@ -114,12 +114,25 @@
             // console.log('buildingData3!', buildingData3);
             // console.log('buildingData4!', buildingData4);
 
-
+            // 看看没有scene的scale放大两倍后尺寸会不会失真
+            let parrot_size=0;
             const parrot = setupModel(parrotData);
             // parrot.position.set(0, 0,0);
             parrot.rotation.set(0, 0, 0);
+            parrot_size=getObjectSize(parrot);
+            console.log('data.scene.children[0]放大前——parrot_size',parrot_size);
+            parrot.scale.set(2,2,2);
+            parrot_size=getObjectSize(parrot);
+            console.log('data.scene.children[0]放大后——parrot_size',parrot_size);
 
+            let building1_size=0;
             const building1 = setupModel_no_children(buildingData1);
+            building1_size=getObjectSize(building1);
+            console.log(' data.scene放大前——building1_size',building1_size);
+            building1.scale.set(2,2,2);
+            building1_size=getObjectSize(building1);
+            console.log(' data.scene放大后——building1_size',building1_size);
+
 
             const building2 = setupModel_no_children(buildingData2);
             building2.position.set(50, 0, 0);
