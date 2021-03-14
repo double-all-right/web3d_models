@@ -18,8 +18,9 @@
         import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
-       
-       
+        import { setupModel_scene_ani2, setupModel_scene_ani1, setupModel_child_ani0 } from './assets/js/exportModel.js';
+
+
         const container = document.querySelector('#scene-container');
         //有动画的数组
         const updatables = [];
@@ -66,7 +67,7 @@
         const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
         const cube = new THREE.Mesh(geometry, material);
         const radiansPerSecond = THREE.MathUtils.degToRad(30);
-        console.log('radiansPerSecond',radiansPerSecond);
+        console.log('radiansPerSecond', radiansPerSecond);
         // each frame, rotate the entire group of spheres
         cube.tick = (delta) => {
             // console.log('delta',delta);
@@ -74,40 +75,10 @@
             cube.rotation.y += delta * radiansPerSecond;
         };
 
-        function setupModel(data) {
-            const model = data.scene.children[0];
-            const clip = data.animations[0];
-            const mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(clip);
-            action.play();
-            model.tick = (delta) => mixer.update(delta);
-            return model;
-        }
-
-        function setupModel_temp(data) {
-            const model = data.scene;
-            const clip = data.animations[2];
-            const mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(clip);
-            action.play();
-            model.tick = (delta) => mixer.update(delta);
-            return model;
-        }
-
-        function setupModel_temp2(data) {
-            const model = data.scene;
-            const clip = data.animations[1];
-            const mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(clip);
-            action.play();
-            model.tick = (delta) => mixer.update(delta);
-            return model;
-        }
-
         async function loadBirds() {
             const loader = new GLTFLoader();
 
-            const [parrotData, flamingoData, lowpolyData,person1Data] = await Promise.all([
+            const [parrotData, flamingoData, lowpolyData, person1Data] = await Promise.all([
                 loader.loadAsync('/assets/models/Parrot.glb'),
                 loader.loadAsync('/assets/models/Flamingo.glb'),
                 loader.loadAsync('/assets/models/character/lowpoly/lowpoly.glb'),
@@ -118,34 +89,30 @@
             console.log('lowpolyData!', lowpolyData);
             // console.log('person1Data!', person1Data);
 
-
-
-
-            const parrot = setupModel(parrotData);
+            const parrot = setupModel_child_ani0(parrotData);
             parrot.position.set(0, 0, 2.5);
             parrot.rotation.set(0, 0, 1);
 
-            const flamingo = setupModel(flamingoData);
+            const flamingo = setupModel_child_ani0(flamingoData);
             flamingo.position.set(7.5, 0, -10);
 
-            const lowpoly = setupModel_temp2(lowpolyData);
+            const lowpoly = setupModel_scene_ani1(lowpolyData);
             lowpoly.position.set(3.5, 0, -10);
 
-            const person1 = setupModel_temp(person1Data);
+            const person1 = setupModel_scene_ani2(person1Data);
             person1.position.set(3.5, 0, -10);
             person1.scale.set(5, 5, 5);
 
             return {
-                parrot,flamingo,lowpoly,person1
+                parrot, flamingo, lowpoly, person1
             }
         }
 
-        
 
         async function init() {
-            const { parrot,flamingo,lowpoly,person1 } = await loadBirds();
+            const { parrot, flamingo, lowpoly, person1 } = await loadBirds();
             updatables.push(controls);
-            updatables.push(parrot, flamingo,cube);
+            updatables.push(parrot, flamingo, cube);
             updatables.push(lowpoly);
             updatables.push(person1);
 

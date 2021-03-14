@@ -17,6 +17,7 @@
         import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
+        import { setupModel_scene_ani2, setupModel_scene_ani1, setupModel_child_ani0 } from './assets/js/exportModel.js';
 
 
         const container = document.querySelector('#scene-container');
@@ -59,8 +60,6 @@
         container.appendChild(renderer.domElement);
 
 
-
-
         const geometry = new THREE.BoxGeometry();
         const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
         const cube = new THREE.Mesh(geometry, material);
@@ -73,87 +72,20 @@
             cube.rotation.y += delta * radiansPerSecond;
         };
 
-        function setupModel(data) {
-            const model = data.scene.children[0];
-            console.log('model', model);
-            if (data.animations.length > 0) {
-                const clip = data.animations[0];
-                const mixer = new THREE.AnimationMixer(model);
-                const action = mixer.clipAction(clip);
-                action.play();
-                model.tick = (delta) => mixer.update(delta);
-            }
-            return model;
-
-        }
-
-        function setupModel_temp(data) {
-            const model = data.scene;
-            if (data.animations.length > 0) {
-
-                const clip = data.animations[2];
-                const mixer = new THREE.AnimationMixer(model);
-                const action = mixer.clipAction(clip);
-                action.play();
-                model.tick = (delta) => mixer.update(delta);
-            }
-            return model;
-
-        }
-
-        function setupModel_temp2(data) {
-            const model = data.scene;
-            if (data.animations.length > 0) {
-                const clip = data.animations[1];
-                const mixer = new THREE.AnimationMixer(model);
-                const action = mixer.clipAction(clip);
-                action.play();
-                model.tick = (delta) => mixer.update(delta);
-            }
-
-            return model;
-        }
         async function loadBirds() {
             const loader = new GLTFLoader();
 
-            const [parrotData, flamingoData, lowpolyData, person1Data, hint_1_data, hint_2_data] = await Promise.all([
-                loader.loadAsync('/assets/models/Parrot.glb'),
-                loader.loadAsync('/assets/models/Flamingo.glb'),
-                loader.loadAsync('/assets/models/character/lowpoly/lowpoly.glb'),
-                loader.loadAsync('/assets/models/character/3dperson1.glb'),
+            const [ hint_1_data, hint_2_data] = await Promise.all([
                 loader.loadAsync('/assets/models/interior/interior_part/hint/hint_1.glb'),
-
                 loader.loadAsync('/assets/models/interior/interior_part/hint/hint_2.glb'),
-
-
             ]);
-            console.log('parrotData!', parrotData);
-            console.log('lowpolyData!', lowpolyData);
-            console.log('hint_1_data!', hint_1_data);
-            console.log('hint_2_data!', hint_2_data);
 
+            const hint_1 = setupModel_child_ani0(hint_1_data);
 
-            const parrot = setupModel(parrotData);
-            parrot.position.set(0, 0, 2.5);
-            parrot.rotation.set(0, 0, 1);
-
-            const hint_1 = setupModel(hint_1_data);
-
-            const hint_2 = setupModel_temp(hint_2_data);
+            const hint_2 = setupModel_scene_ani2(hint_2_data);
             hint_2.scale.set(5, 5, 5);
 
-            const flamingo = setupModel(flamingoData);
-            flamingo.position.set(7.5, 0, -10);
-
-            const lowpoly = setupModel_temp2(lowpolyData);
-            lowpoly.position.set(3.5, 0, -10);
-
-            const person1 = setupModel_temp(person1Data);
-            person1.position.set(3.5, 0, -10);
-            person1.scale.set(5, 5, 5);
-
             var targetPosition = new THREE.Vector3(0, 0.5, 0);
-
 
             // create animation
 
@@ -165,25 +97,12 @@
                 .start();
 
             return {
-                parrot, flamingo, lowpoly, person1, hint_1, hint_2
+                 hint_1, hint_2
             }
         }
-
-
-
         async function init() {
-            const { parrot, flamingo, lowpoly, person1, hint_1, hint_2 } = await loadBirds();
+            const {hint_1, hint_2 } = await loadBirds();
             updatables.push(controls);
-            updatables.push(parrot, flamingo, cube);
-            updatables.push(lowpoly);
-            updatables.push(person1);
-
-
-            scene.add(cube);
-            scene.add(parrot);
-            scene.add(person1);
-            scene.add(lowpoly);
-            scene.add(flamingo);
 
             scene.add(hint_2);
 

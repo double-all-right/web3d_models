@@ -40,31 +40,33 @@
         我自己的视频的视频、音频编码方式-->
         <!-- character_animation.mp4和eat_money.mp4是我通过qq录屏拍的，不能显示
         Lake.mp4是我在网上下载的，可以显示 -->
-        <source src="/assets/videos/character_animation.mp4" type='video/mp4; codecs="mp4v.20, mp4a.40.2"'>
+        <!-- <source src="/assets/videos/character_animation.mp4" type='video/mp4; codecs="mp4v.20, mp4a.40.2"'> -->
         <!-- <source src="/assets/videos/eat_money.mp4" type='video/mp4; codecs="mp4v.20, mp4a.40.2"'> -->
             <!-- <source src="/assets/videos/Lake.mp4" type='video/mp4; codecs="avc1, mp4a.40.2"'> -->
 
         <!-- 这两个是例子附带的视频 -->
         <!--codecs： 视频，音频格式，也可以写成 codecs="avc1, mp4"-->
-        <!-- <source src="/assets/videos/sintel.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'> -->
+        <source src="/assets/videos/sintel.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
         <!-- <source src="./assets/videos/sintel.ogv" type='video/ogg; codecs="theora, vorbis"'> -->
 
     </video>
 
     <script type="module">
         import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
+        import {setupModel_scene_ani0} from './assets/js/tool.js';
 
         let camera, scene, mesh, renderer;
 
         let startButton = document.getElementById('startButton');
 
         startButton.addEventListener('click', function () { // Required in newer browsers after the original article.
-
             init();
             animate();
 
         }, false);
+
         let screen;
+
         function createScreen() {
             let video = document.getElementById('video');
             video.play();
@@ -88,6 +90,27 @@
             mesh = new THREE.Mesh(geometry, materials);
             return mesh;
         }
+      
+        async function loadItems() {
+            const loader = new GLTFLoader();
+
+            const [parrotData,tv_screen_image_data] = await Promise.all([
+                loader.loadAsync('/assets/models/Parrot.glb'),
+                loader.loadAsync('/assets/models/interior/interior_part/tv/tv_screen_image.glb'),
+            ]);
+            console.log('parrotData!', parrotData);
+
+            const parrot = setupModel_scene_ani0(parrotData);
+            parrot.position.set(0, 0, 2.5);
+            parrot.position.set(5, 5, 5);
+
+            const portal_4 = setupModel_scene_ani0(tv_screen_image_data);
+            
+            return {
+                parrot,portal_4
+            }
+        }
+
         function init() {
 
             let overlay = document.getElementById('overlay');
