@@ -18,8 +18,8 @@
         import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
-       
-       
+
+
         const container = document.querySelector('#scene-container');
         //有动画的数组
         const updatables = [];
@@ -63,7 +63,7 @@
         const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
         const cube = new THREE.Mesh(geometry, material);
         const radiansPerSecond = THREE.MathUtils.degToRad(30);
-        console.log('radiansPerSecond',radiansPerSecond);
+        console.log('radiansPerSecond', radiansPerSecond);
         // each frame, rotate the entire group of spheres
         cube.tick = (delta) => {
             // console.log('delta',delta);
@@ -71,60 +71,55 @@
             cube.rotation.y += delta * radiansPerSecond;
         };
 
-        function setupModel(data) {
+        function setupModel_child_ani0(data) {
             const model = data.scene.children[0];
-            const clip = data.animations[0];
-            const mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(clip);
-            action.play();
-            model.tick = (delta) => mixer.update(delta);
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
             return model;
         }
 
-        function setupModel_temp(data) {
+        function setupModel_scene_ani0(data) {
             const model = data.scene;
-            const clip = data.animations[2];
-            const mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(clip);
-            action.play();
-            model.tick = (delta) => mixer.update(delta);
+            if (data.animations.length > 0) {
+                const clip = data.animations[0];
+                const mixer = new THREE.AnimationMixer(model);
+                const action = mixer.clipAction(clip);
+                action.play();
+                model.tick = (delta) => mixer.update(delta);
+            }
             return model;
         }
 
-        function setupModel_temp2(data) {
-            const model = data.scene;
-            const clip = data.animations[1];
-            const mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(clip);
-            action.play();
-            model.tick = (delta) => mixer.update(delta);
-            return model;
-        }
 
         async function loadBirds() {
             const loader = new GLTFLoader();
 
-            const [parrotData,portal_4_data] = await Promise.all([
+            const [parrotData, portal_4_data] = await Promise.all([
                 loader.loadAsync('/assets/models/Parrot.glb'),
                 loader.loadAsync('/assets/models/interior/interior_part/portal/portal_4.glb'),
 
             ]);
             console.log('parrotData!', parrotData);
 
-            const parrot = setupModel(parrotData);
+            const parrot = setupModel_child_ani0(parrotData);
             parrot.position.set(0, 0, 2.5);
             parrot.position.set(5, 5, 5);
 
-            const portal_4 = setupModel(portal_4_data);
-            
+            const portal_4 = setupModel_scene_ani0(portal_4_data);
+            portal_4.scale.set(2, 2, 2);
 
             return {
-                parrot,portal_4
+                parrot, portal_4
             }
         }
 
         async function init() {
-            const { parrot,portal_4 } = await loadBirds();
+            const { parrot, portal_4 } = await loadBirds();
             updatables.push(controls);
 
             updatables.push(cube);
@@ -135,7 +130,7 @@
 
             updatables.push(portal_4);
             scene.add(portal_4);
-            
+
         }
         init();
 
