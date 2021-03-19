@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=UTF-8 />
+    <link href="./styles/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        #startButton {
+            background: #ff0000;
+            border: 0;
+            color: #000000;
+            padding: 16px 20px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: absolute;
+            z-index: 100;
+            left: 20%;
+        }
+
+        #jumpButton {
+            background: #00ff00;
+            border: 0;
+            color: #000000;
+            padding: 16px 20px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: absolute;
+            z-index: 100;
+            left: 30%;
+
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <button id="startButton">Play</button> -->
+    <button id="jumpButton">Jump</button>
+
+    <div id="scene-container">
+        <!-- Our <canvas> will be inserted here -->
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@18.5.0/dist/tween.umd.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
+        import { createCube_2, setupModel_scene_ani2, setupModel_scene_ani1, setupModel_child_ani0 } from './assets/js/exportModel.js';
+        const container = document.querySelector('#scene-container');
+        //有动画的数组
+        const updatables = [];
+
+        // 设立场景
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        // 设立相机
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 15;
+
+        // 设立渲染器
+        const renderer = new THREE.WebGLRenderer();
+        // 设立轨道控制
+        const controls = new OrbitControls(camera, container);
+        controls.tick = () => controls.update();
+        // 灯光
+        const light = new THREE.AmbientLight(0x404040, 5); // soft white light
+        scene.add(light);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+        scene.add(directionalLight);
+
+        const setSize = (container, camera, renderer) => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+        };
+        // 渲染初始窗口大小
+        setSize(container, camera, renderer);
+        //窗口调整
+        window.addEventListener('resize', () => {
+            // set the size again if a resize occurs
+            console.log('resizing');
+            setSize(container, camera, renderer);
+        });
+        // 将实际内容挂载到container里
+        container.appendChild(renderer.domElement);
+
+
+        // stair.rotation.y = Math.PI / 3;
+        let startButton = document.getElementById('startButton');
+        let jumpButton = document.getElementById('jumpButton');
+
+
+        // 设置楼梯尺寸参数
+        let stair_size = { x: 2, y: 2, z: 6 };
+        //根据尺寸,位移，旋转参数创建一段楼梯
+        let size = [stair_size.x, stair_size.y, stair_size.z];
+
+        let amongus_1, group;
+        /*
+         点击按钮发生一系列操作，可以接入显示器交互。
+         比如一个任务完成后就可以触发handle_stair()，显示现在的某一任务的具体完成信息
+         任务完成到最后需要在旁边显示
+         1.等级，分为初级、中级、高级(根据任务完成的情况，由后台审核)
+         2.显示“你学习了xxx功能”
+         3.显示完成任务数量
+         4.在楼梯上显示小任务名
+        */
+
+        // startButton.addEventListener('click', async function () {
+        // }, false);
+
+        jumpButton.addEventListener('click', async function () {
+            jump(2);
+        }, false);
+
+        async function get_data() {
+            try {
+                const response = await axios.get('./assets/data/task.json');
+                // console.log(response.data);
+                return response.data;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function jump(i) {
+            // console.log('i*stair_size.x', i * stair_size.x);
+            // console.log('i*stair_size.y', i * stair_size.y);
+            let targetPosition = new THREE.Vector3(group.children[i].position.x, group.children[i].position.y+stair_size.y/2, 0);
+
+            // create animation
+            new TWEEN.Tween(amongus_1.position)
+                .to(targetPosition)
+                .yoyo(true)
+                .easing(TWEEN.Easing.Cubic.InOut)
+                .start();
+        }
+
+        // 将新楼梯添加到场景中
+        async function handle_stair() {
+            // 1.根据点击的书本(书本是关联任务的)参数，向后端请求任务信息
+            // 2.根据返回数组长度作为创建楼梯的数目创建楼梯，在group中创建楼梯数组
+            // 3.根据数组中具体任务信息如名字等使用text显示在楼梯表面
+            // 4.控制group旋转，得到一个合适的视野
+            const data = await get_data();
+
+            let stair = createCube_2(size);
+
+            const group = new THREE.Group();
+            for (let i = 0; i < data.length; i += 1) {
+                const temp = stair.clone();
+                // console.log('temp', temp);
+
+                temp.position.x = i * stair_size.x;
+                temp.position.y = i * stair_size.y;
+
+                group.add(temp);
+            }
+
+            group.rotation.y = Math.PI / 3;
+            // console.log('group', group);
+            return group;
+        }
+
+        async function loadBirds() {
+            const loader = new GLTFLoader();
+
+            const [hint_2_data, amongus_1_data] = await Promise.all([
+                loader.loadAsync('/assets/models/interior/interior_part/hint/hint_2.glb'),
+                loader.loadAsync('/assets/models/character/amongus_1.glb'),
+            ]);
+            group = await handle_stair();
+
+            const hint_2 = setupModel_scene_ani2(hint_2_data);
+            hint_2.scale.set(5, 5, 5);
+
+
+            amongus_1 = setupModel_scene_ani2(amongus_1_data);
+            amongus_1.scale.set(5, 5, 5);
+            amongus_1.rotation.y = Math.PI;
+            amongus_1.position.y += 1;
+            group.add(amongus_1);
+
+            return {
+                group, hint_2
+            }
+        }
+
+        async function init() {
+            const axesHelper = new THREE.AxesHelper(50);
+            scene.add(axesHelper);
+
+            await handle_stair();
+
+
+            const { group, hint_2 } = await loadBirds();
+            updatables.push(controls);
+
+            scene.add(hint_2);
+            scene.add(group);
+        }
+        init();
+
+        const clock = new THREE.Clock();
+        function tick() {
+            // only call the getDelta function once per frame!
+            const delta = clock.getDelta();
+            for (const object of updatables) {
+                object.tick(delta);
+            }
+        }
+
+        function animate() {
+            tick();
+            TWEEN.update();
+
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

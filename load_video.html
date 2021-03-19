@@ -15,11 +15,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.7);
+            /* background: rgba(0, 0, 0, 0.7); */
         }
 
         #overlay button {
-            background: #ffffff;
+            background: #ff0000;
             border: 0;
             color: #000000;
             padding: 16px 20px;
@@ -30,6 +30,7 @@
 </head>
 
 <body>
+
 
     <div id="overlay">
         <button id="startButton">Play</button>
@@ -42,7 +43,7 @@
         Lake.mp4是我在网上下载的，可以显示 -->
         <!-- <source src="/assets/videos/character_animation.mp4" type='video/mp4; codecs="mp4v.20, mp4a.40.2"'> -->
         <!-- <source src="/assets/videos/eat_money.mp4" type='video/mp4; codecs="mp4v.20, mp4a.40.2"'> -->
-            <!-- <source src="/assets/videos/Lake.mp4" type='video/mp4; codecs="avc1, mp4a.40.2"'> -->
+        <!-- <source src="/assets/videos/Lake.mp4" type='video/mp4; codecs="avc1, mp4a.40.2"'> -->
 
         <!-- 这两个是例子附带的视频 -->
         <!--codecs： 视频，音频格式，也可以写成 codecs="avc1, mp4"-->
@@ -53,21 +54,27 @@
 
     <script type="module">
         import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
-        import {setupModel_scene_ani0} from './assets/js/tool.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
 
-        let camera, scene, mesh, renderer;
+        import { setupModel_scene_ani0, createCube } from './assets/js/exportModel.js';
+
+
+
+        let camera, scene, mesh, renderer, controls;
+
 
         let startButton = document.getElementById('startButton');
 
-        startButton.addEventListener('click', function () { // Required in newer browsers after the original article.
-            init();
+        startButton.addEventListener('click', async function () { // Required in newer browsers after the original article.
+            await init();
             animate();
 
         }, false);
 
         let screen;
 
-        function createScreen() {
+        function createScreen(size) {
             let video = document.getElementById('video');
             video.play();
 
@@ -76,7 +83,7 @@
             texture.magFilter = THREE.LinearFilter;
             texture.format = THREE.RGBFormat;
 
-            let geometry = new THREE.BoxBufferGeometry(2, 1, 0.01);
+            let geometry = new THREE.BoxBufferGeometry(...size);
 
             let material1 = new THREE.MeshBasicMaterial({ color: 0x0000ff, side: THREE.DoubleSide });
             let material2 = new THREE.MeshBasicMaterial({ color: 0xff00ff, side: THREE.DoubleSide });
@@ -90,11 +97,11 @@
             mesh = new THREE.Mesh(geometry, materials);
             return mesh;
         }
-      
+
         async function loadItems() {
             const loader = new GLTFLoader();
 
-            const [parrotData,tv_screen_image_data] = await Promise.all([
+            const [parrotData, tv_screen_image_data] = await Promise.all([
                 loader.loadAsync('/assets/models/Parrot.glb'),
                 loader.loadAsync('/assets/models/interior/interior_part/tv/tv_screen_image.glb'),
             ]);
@@ -104,38 +111,64 @@
             parrot.position.set(0, 0, 2.5);
             parrot.position.set(5, 5, 5);
 
-            const portal_4 = setupModel_scene_ani0(tv_screen_image_data);
-            
+            const tv_screen_image = setupModel_scene_ani0(tv_screen_image_data);
+
             return {
-                parrot,portal_4
+                parrot, tv_screen_image
             }
         }
 
-        function init() {
+        async function init() {
 
             let overlay = document.getElementById('overlay');
             overlay.remove();
-
+            // 场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+            // 灯光
+            const light = new THREE.AmbientLight(0x404040, 5); // soft white light
+            scene.add(light);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+            scene.add(directionalLight);
+            // 相机
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
             camera.position.set(0, 0, 2);
+            // 加入模型到场景中
+            addModelToScene();
 
-            scene = new THREE.Scene();
-
-            screen = createScreen();
-            scene.add(screen);
+            // 渲染器
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            // 轨道控制
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.tick = () => controls.update();
             document.body.appendChild(renderer.domElement);
-
         }
 
-        function animate() {
+        async function addModelToScene() {
+            const { parrot, tv_screen_image } = await loadItems();
 
+            const cube = createCube([0.1, 0.2, 0.3]);
+            cube.position.set(2, 2, 2);
+            scene.add(cube);
+
+            screen = createScreen([1.9,0.8,0.005]);
+            scene.add(screen);
+
+            parrot.position.set(0, 0, 1);
+            parrot.scale.set(0.5, 0.5, 0.5);
+            // scene.add(parrot);
+
+            tv_screen_image.position.set(0,-0.65,-0.04);
+            tv_screen_image.rotation.y=-Math.PI / 2;;
+
+            scene.add(tv_screen_image);
+        }
+        function animate() {
             requestAnimationFrame(animate);
+            controls.tick();//更新相机
             // screen.rotation.y += 0.01;//我们的显示器不用旋转
             renderer.render(scene, camera);
-
-
         }
     </script>
 
