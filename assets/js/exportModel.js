@@ -4,7 +4,36 @@ export {
     setupModel_scene_ani0, setupModel_scene_ani2, setupModel_scene_ani1,
 
     setupModel_child_ani0,
-    createCube
+    createCube, createCube_2
+}
+
+function createCube_2(size, position, rotation) {
+    let geometry, material;
+    if (size) {
+        geometry = new THREE.BoxGeometry(...size);
+    }else{
+        geometry = new THREE.BoxGeometry(1,1,1);
+    }
+    material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    // 设置位置和旋转的代码暂时有bug
+    if (position) {
+        // cube.position.set(position);
+        console.log('position', position);
+    }
+    if (rotation) {
+        // cube.rotation.set(rotation);
+        console.log('rotation', rotation);
+    }
+    const radiansPerSecond = THREE.MathUtils.degToRad(30);
+    console.log('radiansPerSecond', radiansPerSecond);
+    // each frame, rotate the entire group of spheres
+    cube.tick = (delta) => {
+        // console.log('delta',delta);
+        cube.rotation.x += delta * radiansPerSecond;
+        cube.rotation.y += delta * radiansPerSecond;
+    };
+    return cube;
 }
 
 function createCube(size) {
