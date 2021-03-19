@@ -6,7 +6,7 @@
     <link href="./styles/main.css" rel="stylesheet" type="text/css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        button {
+        #startButton {
             background: #ff0000;
             border: 0;
             color: #000000;
@@ -15,12 +15,28 @@
             cursor: pointer;
             position: absolute;
             z-index: 100;
+            left: 20%;
+        }
+
+        #jumpButton {
+            background: #00ff00;
+            border: 0;
+            color: #000000;
+            padding: 16px 20px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: absolute;
+            z-index: 100;
+            left: 30%;
+
         }
     </style>
 </head>
 
 <body>
-    <button id="startButton">Play</button>
+    <!-- <button id="startButton">Play</button> -->
+    <button id="jumpButton">Jump</button>
+
     <div id="scene-container">
         <!-- Our <canvas> will be inserted here -->
     </div>
@@ -73,6 +89,15 @@
 
         // stair.rotation.y = Math.PI / 3;
         let startButton = document.getElementById('startButton');
+        let jumpButton = document.getElementById('jumpButton');
+
+
+        // 设置楼梯尺寸参数
+        let stair_size = { x: 2, y: 2, z: 6 };
+        //根据尺寸,位移，旋转参数创建一段楼梯
+        let size = [stair_size.x, stair_size.y, stair_size.z];
+
+        let amongus_1, group;
         /*
          点击按钮发生一系列操作，可以接入显示器交互。
          比如一个任务完成后就可以触发handle_stair()，显示现在的某一任务的具体完成信息
@@ -82,19 +107,37 @@
          3.显示完成任务数量
          4.在楼梯上显示小任务名
         */
-        startButton.addEventListener('click', async function () {
-            handle_stair();
+
+        // startButton.addEventListener('click', async function () {
+        // }, false);
+
+        jumpButton.addEventListener('click', async function () {
+            jump(2);
         }, false);
 
         async function get_data() {
             try {
                 const response = await axios.get('./assets/data/task.json');
-                console.log(response.data);
+                // console.log(response.data);
                 return response.data;
             } catch (error) {
                 console.error(error);
             }
         }
+
+        function jump(i) {
+            // console.log('i*stair_size.x', i * stair_size.x);
+            // console.log('i*stair_size.y', i * stair_size.y);
+            let targetPosition = new THREE.Vector3(group.children[i].position.x, group.children[i].position.y+stair_size.y/2, 0);
+
+            // create animation
+            new TWEEN.Tween(amongus_1.position)
+                .to(targetPosition)
+                .yoyo(true)
+                .easing(TWEEN.Easing.Cubic.InOut)
+                .start();
+        }
+
         // 将新楼梯添加到场景中
         async function handle_stair() {
             // 1.根据点击的书本(书本是关联任务的)参数，向后端请求任务信息
@@ -103,51 +146,45 @@
             // 4.控制group旋转，得到一个合适的视野
             const data = await get_data();
 
-            // 设置楼梯尺寸参数
-            let stair_size = { x: 2, y: 2, z: 6 };
-            //根据尺寸,位移，旋转参数创建一段楼梯
-            let size = [stair_size.x, stair_size.y, stair_size.z];
             let stair = createCube_2(size);
 
             const group = new THREE.Group();
             for (let i = 0; i < data.length; i += 1) {
                 const temp = stair.clone();
-                console.log('temp', temp);
+                // console.log('temp', temp);
 
                 temp.position.x = i * stair_size.x;
                 temp.position.y = i * stair_size.y;
-                
+
                 group.add(temp);
             }
 
             group.rotation.y = Math.PI / 3;
-
-            scene.add(group);
+            // console.log('group', group);
+            return group;
         }
 
         async function loadBirds() {
             const loader = new GLTFLoader();
 
-            const [hint_2_data] = await Promise.all([
+            const [hint_2_data, amongus_1_data] = await Promise.all([
                 loader.loadAsync('/assets/models/interior/interior_part/hint/hint_2.glb'),
+                loader.loadAsync('/assets/models/character/amongus_1.glb'),
             ]);
+            group = await handle_stair();
 
             const hint_2 = setupModel_scene_ani2(hint_2_data);
             hint_2.scale.set(5, 5, 5);
 
-            var targetPosition = new THREE.Vector3(0, 0.5, 0);
 
-            // create animation
-
-            new TWEEN.Tween(hint_2.position)
-                .to(targetPosition)
-                .repeat(Infinity)
-                .yoyo(true)
-                .easing(TWEEN.Easing.Cubic.InOut)
-                .start();
+            amongus_1 = setupModel_scene_ani2(amongus_1_data);
+            amongus_1.scale.set(5, 5, 5);
+            amongus_1.rotation.y = Math.PI;
+            amongus_1.position.y += 1;
+            group.add(amongus_1);
 
             return {
-                hint_2
+                group, hint_2
             }
         }
 
@@ -155,10 +192,14 @@
             const axesHelper = new THREE.AxesHelper(50);
             scene.add(axesHelper);
 
-            const { hint_2 } = await loadBirds();
+            await handle_stair();
+
+
+            const { group, hint_2 } = await loadBirds();
             updatables.push(controls);
 
             scene.add(hint_2);
+            scene.add(group);
         }
         init();
 

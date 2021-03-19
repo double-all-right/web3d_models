@@ -41,7 +41,7 @@ function createCube(size) {
     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(geometry, material);
     const radiansPerSecond = THREE.MathUtils.degToRad(30);
-    console.log('radiansPerSecond', radiansPerSecond);
+    // console.log('radiansPerSecond', radiansPerSecond);
     // each frame, rotate the entire group of spheres
     cube.tick = (delta) => {
         // console.log('delta',delta);
