@@ -46,7 +46,7 @@
         import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
-        import { createCube_2, setupModel_scene_ani2, setupModel_scene_ani1, setupModel_child_ani0 } from './assets/js/exportModel.js';
+        import { createCube_2, setupModel_scene_ani0 } from './assets/js/exportModel.js';
         const container = document.querySelector('#scene-container');
         //有动画的数组
         const updatables = [];
@@ -167,24 +167,21 @@
         async function loadBirds() {
             const loader = new GLTFLoader();
 
-            const [hint_2_data, amongus_1_data] = await Promise.all([
-                loader.loadAsync('/assets/models/interior/interior_part/hint/hint_2.glb'),
+            const [ amongus_1_data] = await Promise.all([
                 loader.loadAsync('/assets/models/character/amongus_1.glb'),
             ]);
             group = await handle_stair();
 
-            const hint_2 = setupModel_scene_ani2(hint_2_data);
-            hint_2.scale.set(5, 5, 5);
-
-
-            amongus_1 = setupModel_scene_ani2(amongus_1_data);
+            console.log('amongus_1_data',amongus_1_data);
+            amongus_1 = setupModel_scene_ani0(amongus_1_data);
             amongus_1.scale.set(5, 5, 5);
             amongus_1.rotation.y = Math.PI;
             amongus_1.position.y += 1;
+            updatables.push(amongus_1);
             group.add(amongus_1);
 
             return {
-                group, hint_2
+                group
             }
         }
 
@@ -194,11 +191,11 @@
 
             await handle_stair();
 
-
-            const { group, hint_2 } = await loadBirds();
             updatables.push(controls);
+            const { group } = await loadBirds();
 
-            scene.add(hint_2);
+            // updatables.push(group.children[group.length-1]);//把人物加
+            console.log('group',group);
             scene.add(group);
         }
         init();

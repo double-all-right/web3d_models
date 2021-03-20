@@ -74,6 +74,7 @@ function setupModel_child_ani0(data) {
     }
     return model;
 }
+
 function setupModel_scene_ani1(data) {
     const model = data.scene;
     if (data.animations.length > 0) {
