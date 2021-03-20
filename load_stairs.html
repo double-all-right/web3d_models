@@ -102,6 +102,7 @@
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
             render();
 
         };
@@ -186,8 +187,8 @@
                 update_position.x = index * stair_size.x;
                 update_position.y = stair_size.y + index * stair_size.y;
 
-                annotationSprite.position.x = update_position.x;
-                annotationSprite.position.y = update_position.y;
+                annotationSprite.position.x = index * stair_size.x;
+                annotationSprite.position.y =stair_size.y + index * stair_size.y;
                 annotationSprite.userData.id = index;
 
                 stairs.add(annotationSprite);
@@ -198,8 +199,8 @@
                 annotationDiv.className = 'annotationLabel';
                 annotationDiv.innerHTML = data[index].name;
                 const annotationLabel = new CSS2DObject(annotationDiv);
-                annotationLabel.position.x = update_position.x;
-                annotationLabel.position.y = update_position.y;
+                annotationLabel.position.x =index * stair_size.x;
+                annotationLabel.position.y =index * stair_size.y;
                 stairs.add(annotationLabel);
 
                 // 如果有描述，就创造元素，显示描述
@@ -278,8 +279,8 @@
             const { stairs, amongus_1, parrot } = await load_items();
             // console.log('stairs',stairs);
 
-            updatables.push(parrot);
-            scene.add(parrot);
+            // updatables.push(parrot);
+            // scene.add(parrot);
 
             updatables.push(amongus_1);
             stairs.add(amongus_1);//将人物放到楼梯的坐标系中
