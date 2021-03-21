@@ -24,6 +24,7 @@
 
         const container = document.querySelector('#scene-container');
 
+        const updatables=[];//有动画的数组
         // 设立场景
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf0f0f0);
@@ -64,22 +65,43 @@
         async function loadBirds() {
             const loader = new GLTFLoader();
 
-            const duck_data = await loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf');
-
+            // const duck_data = await loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf');
+            const [background_data, teacher_2_data,duck_data] = await Promise.all([
+                loader.loadAsync('http://106.13.182.155:9090/models/classroom-page/glb/background.glb'),
+                loader.loadAsync('http://106.13.182.155:9090/models/classroom-page/glb/teacher_2.glb'),
+                // loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf'),
+                // loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf'),
+                
+                loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf')
+            ]);
             console.log('duck_data!', duck_data);
+            console.log('background_data!', background_data);
+            console.log('teacher_2_data!', teacher_2_data);
+
 
             const duck = setupModel_child_ani0(duck_data);
             duck.position.set(0, 0, 2.5);
 
+            const background = setupModel_scene_ani0(background_data);
+            background.position.set(0, 0, 5.5);
+
+            const teacher_2 = setupModel_scene_ani0(teacher_2_data);
+            teacher_2.position.set(0, 2, 5.5);
+
             return {
-                duck
+                duck,background,teacher_2
             }
         }
         async function init() {
-            const { duck } = await loadBirds();
+            const { duck,background,teacher_2 } = await loadBirds();
             updatables.push(controls);
 
             scene.add(duck);
+
+            scene.add(background);
+
+            scene.add(teacher_2);
+
         }
 
         init();

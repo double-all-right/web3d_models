@@ -47,7 +47,6 @@
 <body>
     <h3>点击按钮激发人物动画</h3>
     <button id="jumpButton">Jump</button>
-    <div id="annotationsPanel"></div>
     <div id="scene-container">
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@18.5.0/dist/tween.umd.js"></script>
@@ -140,7 +139,7 @@
          4.在楼梯上显示小任务名
         */
         jumpButton.addEventListener('click', async function () {
-            jump(2);
+            jump(1);
         }, false);
 
         // 用来从后端获取数据
@@ -169,6 +168,7 @@
         // 用来加载提示标签，需要先调用get_data()
         function load_annotation(stairs) {
             const circleTexture = new THREE.TextureLoader().load("assets/img/circle.png");
+            console.log('circleTexture',circleTexture);
             // console.log('data', data);
             Object.keys(data).forEach(index => {
                 // console.log('data[index]', data[index]);
@@ -275,12 +275,7 @@
 
             updatables.push(controls);
 
-            await load_stair();
             const { stairs, amongus_1, parrot } = await load_items();
-            // console.log('stairs',stairs);
-
-            // updatables.push(parrot);
-            // scene.add(parrot);
 
             updatables.push(amongus_1);
             stairs.add(amongus_1);//将人物放到楼梯的坐标系中
