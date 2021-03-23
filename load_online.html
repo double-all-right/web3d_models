@@ -67,10 +67,9 @@
 
             // const duck_data = await loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf');
             const [background_data, teacher_2_data,duck_data] = await Promise.all([
+                
                 loader.loadAsync('http://106.13.182.155:9090/models/classroom-page/glb/blackboard.glb'),
                 loader.loadAsync('http://106.13.182.155:9090/models/classroom-page/glb/teacher_2.glb'),
-                // loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf'),
-                // loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf'),
                 
                 loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf')
             ]);
