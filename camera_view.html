@@ -19,11 +19,26 @@
             right: 0;
 
         }
+
+        #setButton {
+            background: #0000ff;
+            border: 0;
+            color: #000000;
+            padding: 16px 20px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: absolute;
+            z-index: 100;
+            right: 30%;
+
+        }
     </style>
 </head>
 
 <body>
     <button id="resetButton">reset camera position</button>
+    <button id="setButton">set camera position</button>
+
 
 </body>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -54,13 +69,11 @@
         z: 8
     }
     camera.position.set(original_position.x, original_position.y, original_position.z);
-   
+
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     renderer.domElement.addEventListener('click', onClick, false);
-    renderer.domElement.addEventListener('dblclick', onDoubleClick, false);
-
 
 
     // 轨道控制器
@@ -85,8 +98,18 @@
     document.body.appendChild(stats.dom);
 
     let resetButton = document.getElementById('resetButton');
+    let setButton = document.getElementById('setButton');
 
+    setButton.addEventListener('click', async function () {
+        console.log('设置相机位置');
+        let index=2;
+        gotoAnnotation(stairs_array[index]);
+    }, false);
 
+    resetButton.addEventListener('click', async function () {
+        console.log('reset camera position');
+        reset_camera_transformations();
+    }, false);
 
     // 设置楼梯尺寸参数
     let stair_size = { x: 2, y: 2, z: 6 };
@@ -99,7 +122,6 @@
     const sceneMeshes = new Array();
 
 
-
     async function init() {
         const axesHelper = new THREE.AxesHelper(50);
         scene.add(axesHelper);
@@ -108,7 +130,6 @@
         const { stairs, amongus_1, parrot } = await load_items();
 
         stairs.add(amongus_1);//将人物放到楼梯的坐标系中
-
 
         scene.add(stairs);
 
@@ -136,25 +157,7 @@
             }
         }
     }
-    //双击屏幕可以调整视野
-    function onDoubleClick(event) {
-        raycaster.setFromCamera({
-            x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
-            y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1
-        }, camera);
-        const intersects = raycaster.intersectObjects(sceneMeshes, true);
-        if (intersects.length > 0) {
-            const p = intersects[0].point;
-            new TWEEN.Tween(controls.target)
-                .to({
-                    x: p.x,
-                    y: p.y,
-                    z: p.z
-                }, 500)
-                .easing(TWEEN.Easing.Cubic.Out)
-                .start();
-        }
-    }
+
     //使用tweenjs实现相机视野跟随
     function gotoAnnotation(a) {
         console.log('gotoAnnotation a', a);
@@ -259,10 +262,6 @@
         }
     }
 
-    resetButton.addEventListener('click', async function () {
-        console.log('reset camera position');
-        reset_camera_transformations();
-    }, false);
     function reset_camera_transformations() {
         new TWEEN.Tween(camera.position).
             to(original_position, 600).
