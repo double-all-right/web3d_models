@@ -158,26 +158,7 @@
         }
     }
 
-    //使用tweenjs实现相机视野跟随
-    function gotoAnnotation(a) {
-        console.log('gotoAnnotation a', a);
-        new TWEEN.Tween(camera.position)
-            .to({
-                x: stairs_array[0].position.x - (0.5 + 5) * stair_size.x,
-                y: a.position.y * 1.5,
-                z: a.position.z * 1.5
-            }, 500)
-            .easing(TWEEN.Easing.Cubic.Out)
-            .start();
-        new TWEEN.Tween(controls.target)
-            .to({
-                x: a.position.x,
-                y: a.position.y,
-                z: a.position.z
-            }, 500)
-            .easing(TWEEN.Easing.Cubic.Out)
-            .start();
-    }
+  
 
     var animate = function () {
         requestAnimationFrame(animate);
@@ -266,6 +247,32 @@
         new TWEEN.Tween(camera.position).
             to(original_position, 600).
             start()
+
+            // new TWEEN.Tween(controls.target)
+            // .to(original_position, 600)
+            // .easing(TWEEN.Easing.Cubic.Out)
+            // .start();
+    }
+      //使用tweenjs实现相机视野跟随
+      function gotoAnnotation(a) {
+          console.log('controls.target.position',controls.target.position);
+        console.log('gotoAnnotation a', a);
+        new TWEEN.Tween(camera.position)
+            .to({
+                x: stairs_array[0].position.x - (0.5 + 5) * stair_size.x,
+                y: a.position.y * 1.5,
+                z: a.position.z * 1.5
+            }, 500)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
+        // new TWEEN.Tween(controls.target)
+        //     .to({
+        //         x: a.position.x,
+        //         y: a.position.y,
+        //         z: a.position.z
+        //     }, 500)
+        //     .easing(TWEEN.Easing.Cubic.Out)
+        //     .start();
     }
 </script>
 
