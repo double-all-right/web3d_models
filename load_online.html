@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=UTF-8 />
+    <link href="./styles/main.css" rel="stylesheet" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <div id="scene-container">
+        <!-- Our <canvas> will be inserted here -->
+    </div>
+    <script>
+
+    </script>
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
+        import { getObjectSize } from './assets/js/tool.js';
+        import { setupModel_child_ani0, setupModel_scene_ani0 ,createCube_2} from './assets/js/exportModel.js';
+
+
+        const container = document.querySelector('#scene-container');
+
+        const updatables=[];//有动画的数组
+        // 设立场景
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        // 设立相机
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 15;
+
+        // 设立渲染器
+        const renderer = new THREE.WebGLRenderer();
+        // 设立轨道控制
+        const controls = new OrbitControls(camera, container);
+        controls.tick = () => controls.update();
+        // 灯光
+        const light = new THREE.AmbientLight(0x404040, 5); // soft white light
+        scene.add(light);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+        scene.add(directionalLight);
+
+        const setSize = (container, camera, renderer) => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+        };
+        // 渲染初始窗口大小
+        setSize(container, camera, renderer);
+        //窗口调整
+        window.addEventListener('resize', () => {
+            // set the size again if a resize occurs
+            console.log('resizing');
+            setSize(container, camera, renderer);
+        });
+        // 将实际内容挂载到container里
+        container.appendChild(renderer.domElement);
+
+
+        
+        async function loadBirds() {
+            const loader = new GLTFLoader();
+
+            // const duck_data = await loader.loadAsync('https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf');
+            // const duck = setupModel_child_ani0(duck_data);
+
+            const duck = createCube_2();
+            console.log('duck!', duck);
+            duck.position.set(0, 0, 2.5);
+
+
+            const background_data = await loader.loadAsync('http://106.13.182.155:9090/models/classroom-page/glb/blackboard.glb');
+            const background = setupModel_scene_ani0(background_data);
+            background.position.set(0, 0, 5.5);
+            console.log('background_data!', background_data);
+
+
+            const teacher_2_data = await loader.loadAsync('http://106.13.182.155:9090/models/classroom-page/glb/teacher_2.glb');
+            const teacher_2 = setupModel_scene_ani0(teacher_2_data);
+            teacher_2.position.set(0, 2, 5.5);
+            console.log('teacher_2_data!', teacher_2_data);
+
+
+            const tree_group_data = await loader.loadAsync('http://106.13.182.155:9090/models/college-page/glb/tree_group.glb');
+            const tree_group = setupModel_scene_ani0(tree_group_data);
+            tree_group.position.set(0,4, 5.5);
+            console.log('tree_group_data!', tree_group_data);
+
+            const portal_4_data = await loader.loadAsync('http://106.13.182.155:9090/models/college-page/glb/portal_4.glb');
+            const portal_4 = setupModel_scene_ani0(portal_4_data);
+            portal_4.position.set(0,4, 5.5);
+            console.log('portal_4_data!', portal_4_data);
+
+
+
+            // console.log('duck_data!', duck_data);
+            // console.log('background_data!', background_data);
+            // console.log('teacher_2_data!', teacher_2_data);
+
+            
+        
+            return {
+                duck,background,teacher_2,tree_group,portal_4
+            }
+        }
+        async function init() {
+            const { duck,background,teacher_2,tree_group ,portal_4} = await loadBirds();
+            updatables.push(controls);
+
+            scene.add(duck);
+
+            scene.add(background);
+
+            scene.add(teacher_2);
+
+            scene.add(tree_group);
+         
+            scene.add(portal_4);
+        }
+
+        init();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

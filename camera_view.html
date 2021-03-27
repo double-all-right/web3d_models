@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #resetButton {
+            background: #ff0000;
+            border: 0;
+            color: #000000;
+            padding: 16px 20px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: absolute;
+            z-index: 100;
+            right: 0;
+
+        }
+
+        #setButton {
+            background: #0000ff;
+            border: 0;
+            color: #000000;
+            padding: 16px 20px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: absolute;
+            z-index: 100;
+            right: 30%;
+
+        }
+    </style>
+</head>
+
+<body>
+    <button id="resetButton">reset camera position</button>
+    <button id="setButton">set camera position</button>
+
+
+</body>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script type="module">
+
+    import * as THREE from 'https://unpkg.com/three@0.119.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.119.0/examples/jsm/controls/OrbitControls.js';
+    import Stats from 'https://unpkg.com/three@0.119.0/examples/jsm/libs/stats.module.js';
+    import { TWEEN } from 'https://unpkg.com/three@0.119.0/examples/jsm/libs/tween.module.min.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
+    import { createCube_2, setupModel_scene_ani0, setupModel_child_ani0 } from './assets/js/exportModel.js';
+
+
+    //场景，灯光，相机，渲染器
+    const scene = new THREE.Scene();
+    var light = new THREE.DirectionalLight();
+    light.position.set(-30, 30, 30);
+    scene.add(light);
+    var light2 = new THREE.DirectionalLight();
+    light2.position.set(30, 30, -30);
+    scene.add(light2);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    let original_position = {
+        x: 10,
+        y: 5,
+        z: 8
+    }
+    camera.position.set(original_position.x, original_position.y, original_position.z);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    renderer.domElement.addEventListener('click', onClick, false);
+
+
+    // 轨道控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.dampingFactor = .2;
+    controls.enableDamping = true;
+    controls.target.set(8, 3, 4);
+
+
+    const raycaster = new THREE.Raycaster();
+
+
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        render();
+    }
+
+    const stats = Stats();
+    document.body.appendChild(stats.dom);
+
+    let resetButton = document.getElementById('resetButton');
+    let setButton = document.getElementById('setButton');
+
+    setButton.addEventListener('click', async function () {
+        console.log('设置相机位置');
+        let index=2;
+        gotoAnnotation(stairs_array[index]);
+    }, false);
+
+    resetButton.addEventListener('click', async function () {
+        console.log('reset camera position');
+        reset_camera_transformations();
+    }, false);
+
+    // 设置楼梯尺寸参数
+    let stair_size = { x: 2, y: 2, z: 6 };
+    //根据尺寸,位移，旋转参数创建一段楼梯
+    let size = [stair_size.x, stair_size.y, stair_size.z];
+    let stairs_array = [];
+    let data = [];//从后端获取的数据
+    let amongus_1;
+    const annotationMarkers = [];
+    const sceneMeshes = new Array();
+
+
+    async function init() {
+        const axesHelper = new THREE.AxesHelper(50);
+        scene.add(axesHelper);
+
+
+        const { stairs, amongus_1, parrot } = await load_items();
+
+        stairs.add(amongus_1);//将人物放到楼梯的坐标系中
+
+        scene.add(stairs);
+
+        sceneMeshes.push(stairs);
+
+
+
+    }
+
+    init();
+
+    //相机跳转函数
+    function onClick(event) {
+        console.log('clicking');
+        raycaster.setFromCamera({
+            x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+            y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1
+        }, camera);
+        const intersects = raycaster.intersectObjects(annotationMarkers, true);
+        if (intersects.length > 0) {
+            console.log('intersects[0].object', intersects[0].object);
+
+            if (intersects[0].object.userData && intersects[0].object.userData.id) {
+                gotoAnnotation(stairs_array[intersects[0].object.userData.id]);
+            }
+        }
+    }
+
+  
+
+    var animate = function () {
+        requestAnimationFrame(animate);
+        controls.update();
+        TWEEN.update();
+        render();
+        stats.update();
+    };
+
+    function render() {
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // 用来从后端获取数据
+    async function get_data() {
+        try {
+            // const response = await axios.get('./assets/data/task.json');
+            const response = await axios.get('./assets/data/annotations.json');
+
+            // console.log(response.data);
+            return response.data;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // 将新楼梯添加到场景中
+    async function load_stair() {
+        // 1.根据点击的书本(书本是关联任务的)参数，向后端请求任务信息
+        // 2.根据返回数组长度作为创建楼梯的数目创建楼梯，在group中创建楼梯数组
+        // 3.根据数组中具体任务信息如名字等使用text显示在楼梯表面
+        // 4.控制group旋转，得到一个合适的视野
+        let group = new THREE.Group()
+        data = await get_data();
+        // 创建一段阶梯
+        let stair = createCube_2(size);
+        // 将这些阶梯送入到group，在group坐标系而不是world坐标系，可以防止位置错乱
+        for (let i = 0; i < data.length; i += 1) {
+            const temp = stair.clone();
+            // console.log('temp', temp);
+            temp.position.x = i * stair_size.x;
+            temp.position.y = i * stair_size.y;
+            stairs_array.push(temp);
+            temp.userData.id = i;
+            annotationMarkers.push(temp);
+            group.add(temp);
+        }
+        // group.rotation.y = Math.PI / 3;
+        // console.log('group', group);
+
+
+        return group;
+    }
+
+
+    async function load_items() {
+        const loader = new GLTFLoader();
+
+        const [parrot_data, amongus_1_data] = await Promise.all([
+            loader.loadAsync('/assets/models/Parrot.glb'),
+            loader.loadAsync('/assets/models/character/amongus_1.glb'),
+        ]);
+
+        console.log('amongus_1_data', amongus_1_data);
+
+        let stairs = await load_stair();  // 创建楼梯
+
+        const parrot = setupModel_child_ani0(parrot_data);
+        parrot.position.set(0, 0, 2.5);
+        parrot.rotation.set(0, 0, 1);
+
+
+        // 创建人物
+        amongus_1 = setupModel_scene_ani0(amongus_1_data);
+        amongus_1.scale.set(5, 5, 5);
+        amongus_1.rotation.y = Math.PI;
+        amongus_1.position.y += 1;
+
+        return {
+            stairs, amongus_1, parrot
+        }
+    }
+
+    function reset_camera_transformations() {
+        new TWEEN.Tween(camera.position).
+            to(original_position, 600).
+            start()
+
+            // new TWEEN.Tween(controls.target)
+            // .to(original_position, 600)
+            // .easing(TWEEN.Easing.Cubic.Out)
+            // .start();
+    }
+      //使用tweenjs实现相机视野跟随
+      function gotoAnnotation(a) {
+          console.log('controls.target.position',controls.target.position);
+        console.log('gotoAnnotation a', a);
+        new TWEEN.Tween(camera.position)
+            .to({
+                x: stairs_array[0].position.x - (0.5 + 5) * stair_size.x,
+                y: a.position.y * 1.5,
+                z: a.position.z * 1.5
+            }, 500)
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
+        // new TWEEN.Tween(controls.target)
+        //     .to({
+        //         x: a.position.x,
+        //         y: a.position.y,
+        //         z: a.position.z
+        //     }, 500)
+        //     .easing(TWEEN.Easing.Cubic.Out)
+        //     .start();
+    }
+</script>
+
+</html>

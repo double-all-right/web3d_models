@@ -133,6 +133,7 @@ function onWindowResize() {
 renderer.domElement.addEventListener('click', onClick, false);
 //相机跳转函数
 function onClick(event) {
+    console.log('clicking');
     raycaster.setFromCamera({
         x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
         y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1

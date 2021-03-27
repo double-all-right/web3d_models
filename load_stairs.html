@@ -6,18 +6,6 @@
     <link href="./styles/main.css" rel="stylesheet" type="text/css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        #startButton {
-            background: #ff0000;
-            border: 0;
-            color: #000000;
-            padding: 16px 20px;
-            text-transform: uppercase;
-            cursor: pointer;
-            position: absolute;
-            z-index: 100;
-            left: 20%;
-        }
-
         #jumpButton {
             background: #00ff00;
             border: 0;
@@ -30,15 +18,36 @@
             left: 30%;
 
         }
+
+        .annotationLabel {
+            padding: 2px;
+            color: #ffffff;
+            font-family: monospace;
+            pointer-events: none;
+            font-size: 17px;
+        }
+
+        .annotationDescription {
+            color: #ffffff;
+            font-family: monospace;
+            pointer-events: none;
+            font-size: 14px;
+            position: absolute;
+            left: 25px;
+            padding: 1em;
+            width: 200px;
+            background: rgba(0, 0, 0, 0.66);
+            border-radius: .5em;
+            transition: opacity .5s;
+            display: none;
+        }
     </style>
 </head>
 
 <body>
-    <!-- <button id="startButton">Play</button> -->
+    <h3>点击按钮激发人物动画</h3>
     <button id="jumpButton">Jump</button>
-
     <div id="scene-container">
-        <!-- Our <canvas> will be inserted here -->
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@18.5.0/dist/tween.umd.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -46,11 +55,16 @@
         import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'https://unpkg.com/three@0.122.0/examples/jsm/loaders/GLTFLoader.js';
-        import { createCube_2, setupModel_scene_ani2, setupModel_scene_ani1, setupModel_child_ani0 } from './assets/js/exportModel.js';
+        import { createCube_2, setupModel_scene_ani0, setupModel_child_ani0 } from './assets/js/exportModel.js';
+        import { CSS2DRenderer, CSS2DObject } from 'https://unpkg.com/three@0.122.0/examples/jsm/renderers/CSS2DRenderer.js';
+
         const container = document.querySelector('#scene-container');
         //有动画的数组
         const updatables = [];
-
+        // 设置动画时钟
+        const clock = new THREE.Clock();
+        // 标签数组
+        const annotationMarkers = [];
         // 设立场景
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf0f0f0);
@@ -60,9 +74,22 @@
 
         // 设立渲染器
         const renderer = new THREE.WebGLRenderer();
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+        renderer.domElement.addEventListener('click', onClick, false);
+
         // 设立轨道控制
         const controls = new OrbitControls(camera, container);
         controls.tick = () => controls.update();
+
+        // 碰撞检测
+        const raycaster = new THREE.Raycaster();
+
+
         // 灯光
         const light = new THREE.AmbientLight(0x404040, 5); // soft white light
         scene.add(light);
@@ -74,6 +101,9 @@
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            render();
+
         };
         // 渲染初始窗口大小
         setSize(container, camera, renderer);
@@ -87,8 +117,8 @@
         container.appendChild(renderer.domElement);
 
 
-        // stair.rotation.y = Math.PI / 3;
-        let startButton = document.getElementById('startButton');
+
+        // 按钮用来激发人物动画
         let jumpButton = document.getElementById('jumpButton');
 
 
@@ -96,25 +126,23 @@
         let stair_size = { x: 2, y: 2, z: 6 };
         //根据尺寸,位移，旋转参数创建一段楼梯
         let size = [stair_size.x, stair_size.y, stair_size.z];
-
-        let amongus_1, group;
+        let stairs_array = [];
+        let data = [];
+        let amongus_1;
         /*
          点击按钮发生一系列操作，可以接入显示器交互。
-         比如一个任务完成后就可以触发handle_stair()，显示现在的某一任务的具体完成信息
+         比如一个任务完成后就可以触发load_stair(i)，显示现在的某一任务的具体完成信息
          任务完成到最后需要在旁边显示
          1.等级，分为初级、中级、高级(根据任务完成的情况，由后台审核)
          2.显示“你学习了xxx功能”
          3.显示完成任务数量
          4.在楼梯上显示小任务名
         */
-
-        // startButton.addEventListener('click', async function () {
-        // }, false);
-
         jumpButton.addEventListener('click', async function () {
-            jump(2);
+            jump(1);
         }, false);
 
+        // 用来从后端获取数据
         async function get_data() {
             try {
                 const response = await axios.get('./assets/data/task.json');
@@ -124,12 +152,11 @@
                 console.error(error);
             }
         }
-
+        // 跳到第几个楼梯(i是阶梯索引)
         function jump(i) {
             // console.log('i*stair_size.x', i * stair_size.x);
             // console.log('i*stair_size.y', i * stair_size.y);
-            let targetPosition = new THREE.Vector3(group.children[i].position.x, group.children[i].position.y+stair_size.y/2, 0);
-
+            let targetPosition = new THREE.Vector3(stairs_array[i].position.x, stairs_array[i].position.y + stair_size.y / 2, 0);
             // create animation
             new TWEEN.Tween(amongus_1.position)
                 .to(targetPosition)
@@ -138,88 +165,173 @@
                 .start();
         }
 
+        // 用来加载提示标签，需要先调用get_data()
+        function load_annotation(stairs) {
+            const circleTexture = new THREE.TextureLoader().load("assets/img/circle.png");
+            console.log('circleTexture',circleTexture);
+            // console.log('data', data);
+            Object.keys(data).forEach(index => {
+                // console.log('data[index]', data[index]);
+                const annotationSpriteMaterial = new THREE.SpriteMaterial({
+                    map: circleTexture,
+                    depthTest: false,
+                    depthWrite: false,
+                    sizeAttenuation: false
+                });
+                const annotationSprite = new THREE.Sprite(annotationSpriteMaterial);
+
+                let size = 0.1;
+                annotationSprite.scale.set(3 * size, 2 * size, size);//设置标签大小
+                // 声明并使用标签位置
+                let update_position = {};
+                update_position.x = index * stair_size.x;
+                update_position.y = stair_size.y + index * stair_size.y;
+
+                annotationSprite.position.x = index * stair_size.x;
+                annotationSprite.position.y =stair_size.y + index * stair_size.y;
+                annotationSprite.userData.id = index;
+
+                stairs.add(annotationSprite);
+                annotationMarkers.push(annotationSprite);
+
+                // 设置详细描述方框的位置
+                const annotationDiv = document.createElement('div');
+                annotationDiv.className = 'annotationLabel';
+                annotationDiv.innerHTML = data[index].name;
+                const annotationLabel = new CSS2DObject(annotationDiv);
+                annotationLabel.position.x =index * stair_size.x;
+                annotationLabel.position.y =index * stair_size.y;
+                stairs.add(annotationLabel);
+
+                // 如果有描述，就创造元素，显示描述
+                if (data[index].description) {
+                    const annotationDescriptionDiv = document.createElement('div');
+                    annotationDescriptionDiv.className = 'annotationDescription';
+                    annotationDescriptionDiv.innerHTML = data[index].description;
+                    annotationDiv.appendChild(annotationDescriptionDiv);
+                    data[index].descriptionDomElement = annotationDescriptionDiv;
+                }
+            });
+
+        }
+
         // 将新楼梯添加到场景中
-        async function handle_stair() {
+        async function load_stair() {
             // 1.根据点击的书本(书本是关联任务的)参数，向后端请求任务信息
             // 2.根据返回数组长度作为创建楼梯的数目创建楼梯，在group中创建楼梯数组
             // 3.根据数组中具体任务信息如名字等使用text显示在楼梯表面
             // 4.控制group旋转，得到一个合适的视野
-            const data = await get_data();
-
+            let group = new THREE.Group()
+            data = await get_data();
+            // 创建一段阶梯
             let stair = createCube_2(size);
-
-            const group = new THREE.Group();
+            // 将这些阶梯送入到group，在group坐标系而不是world坐标系，可以防止位置错乱
             for (let i = 0; i < data.length; i += 1) {
                 const temp = stair.clone();
                 // console.log('temp', temp);
-
                 temp.position.x = i * stair_size.x;
                 temp.position.y = i * stair_size.y;
-
+                stairs_array.push(temp);
                 group.add(temp);
             }
-
             group.rotation.y = Math.PI / 3;
             // console.log('group', group);
             return group;
         }
 
-        async function loadBirds() {
+        async function load_items() {
             const loader = new GLTFLoader();
 
-            const [hint_2_data, amongus_1_data] = await Promise.all([
-                loader.loadAsync('/assets/models/interior/interior_part/hint/hint_2.glb'),
+            const [parrot_data, amongus_1_data] = await Promise.all([
+                loader.loadAsync('/assets/models/Parrot.glb'),
                 loader.loadAsync('/assets/models/character/amongus_1.glb'),
             ]);
-            group = await handle_stair();
 
-            const hint_2 = setupModel_scene_ani2(hint_2_data);
-            hint_2.scale.set(5, 5, 5);
+            console.log('amongus_1_data', amongus_1_data);
 
+            let stairs = await load_stair();  // 创建楼梯
 
-            amongus_1 = setupModel_scene_ani2(amongus_1_data);
+            const parrot = setupModel_child_ani0(parrot_data);
+            parrot.position.set(0, 0, 2.5);
+            parrot.rotation.set(0, 0, 1);
+
+            load_annotation(stairs);//有了楼梯后创建标签
+
+            // 创建人物
+            amongus_1 = setupModel_scene_ani0(amongus_1_data);
             amongus_1.scale.set(5, 5, 5);
             amongus_1.rotation.y = Math.PI;
             amongus_1.position.y += 1;
-            group.add(amongus_1);
 
             return {
-                group, hint_2
+                stairs, amongus_1, parrot
             }
         }
+
 
         async function init() {
             const axesHelper = new THREE.AxesHelper(50);
             scene.add(axesHelper);
 
-            await handle_stair();
-
-
-            const { group, hint_2 } = await loadBirds();
             updatables.push(controls);
 
-            scene.add(hint_2);
-            scene.add(group);
+            const { stairs, amongus_1, parrot } = await load_items();
+
+            updatables.push(amongus_1);
+            stairs.add(amongus_1);//将人物放到楼梯的坐标系中
+
+            scene.add(stairs);
         }
+
         init();
 
-        const clock = new THREE.Clock();
+        // 加载函数动画的方法
         function tick() {
-            // only call the getDelta function once per frame!
             const delta = clock.getDelta();
             for (const object of updatables) {
                 object.tick(delta);
             }
         }
 
+        function render() {
+            labelRenderer.render(scene, camera);
+            renderer.render(scene, camera);
+        }
+
         function animate() {
             tick();
             TWEEN.update();
-
             requestAnimationFrame(animate);
-            renderer.render(scene, camera);
+            render();
         }
+
         animate();
+
+        // 捕获点击事件
+        function onClick(event) {
+            raycaster.setFromCamera({
+                x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+                y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1
+            }, camera);
+            const intersects = raycaster.intersectObjects(annotationMarkers, true);
+            if (intersects.length > 0) {
+                if (intersects[0].object.userData && intersects[0].object.userData.id) {
+                    gotoAnnotation(data[intersects[0].object.userData.id]);
+                }
+            }
+        }
+        //切换详细描述的显隐
+        function gotoAnnotation(a) {
+            Object.keys(data).forEach(index => {
+                if (data[index].descriptionDomElement) {
+                    data[index].descriptionDomElement.style.display = "none";
+                }
+            });
+            if (a.descriptionDomElement) {
+                console.log(a.descriptionDomElement.style.display);
+                a.descriptionDomElement.style.display = "block";
+            }
+        }
 
     </script>
 </body>
