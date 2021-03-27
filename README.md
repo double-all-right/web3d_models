@@ -21,6 +21,11 @@ windows平台在资源管理器中选中.glb模型，就可以预览模型
 7. free3d :https://free3d.com/
 
 ---
+可以下载图片作为image texture的网站(blender shading)
+1. https://unsplash.com/
+2. https://www.3dassets.one
+
+---
 /assets/models下文件组织
 1. character存放人物模型
 2. house存放建筑物模型(教学楼)
